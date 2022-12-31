@@ -6,6 +6,7 @@ from os import environ
 # from pdfreader import PDFDocument, SimplePDFViewer
 import PyPDF2
 import io
+from gtts import gTTS
 
 
 #### Part 1: Converting PDF pages to txt files ####
@@ -16,37 +17,22 @@ with open("tutorial-example.pdf", "rb") as file:
 
 	for page in page_list:
 		with open(f"decoded_pdf_pages/pdf_page_{n}.txt", "w", encoding="utf-8") as f:
-			f.write(page.extract_text())
-		n += 1
+			if page.extract_text() != "":
+				# Only creates a txt file if the txt isnt blank
+				f.write(page.extract_text())
+				n += 1
 
-
-#### API Variables ####
-load_dotenv()
-url = "https://voicerss-text-to-speech.p.rapidapi.com/"
-headers = {
-	"content-type": "application/x-www-form-urlencoded",
-	"X-RapidAPI-Key": environ.get('X-RapidAPI-Key'),
-	"X-RapidAPI-Host": "voicerss-text-to-speech.p.rapidapi.com",
-}
-api_key = {
-	"key": environ.get('api-key')
-}
-text = {
-	"src": "PLACEHOLDER",
-	"hl": "en-us",
-}
 
 #### Part 2: Sendng API Request for each page.txt ####
-for i in range(1):
+for i in range(n - 1):
 
 	with open(f"decoded_pdf_pages/pdf_page_{i + 1}.txt", "rb",) as file:
-		text["src"] = file.read().decode()
+		text = file.read().decode()
 
-	response = requests.post(url=url, headers=headers, params=api_key, data=text)
-	response.raise_for_status()
-	# TODO: Fix this garbage
-	with open(f"speech/tts_page_{i + 1}.wav", "w", encoding="utf-8") as file:
-		wave.Wave_write(response.text)
-		wave.Wave_write()
-
+	try:
+		tts = gTTS(text=text, lang="en", slow=False)
+		tts.save(f"speech/tts_page_{i + 1}.mp3")
+	except AssertionError:
+		# Originally setup as to skip blank txt files, but fixed no blanks above
+		pass
 
